@@ -381,8 +381,8 @@ function init(){
   for(const g of groups){const o=document.createElement('option');o.value=g;o.textContent=g+' area';area.append(o)}
   for(const st of stands){
     const el=document.createElement('button');
-    el.className='spot'; el.type='button'; el.title='Stand '+st.id;
-    el.setAttribute('aria-label','Stand '+st.id);
+    el.className='spot'; el.type='button'; el.title=(st.id==='VIP HUT'?st.id:'Stand '+st.id);
+    el.setAttribute('aria-label',(st.id==='VIP HUT'?st.id:'Stand '+st.id));
     el.style.left=st.x+'%'; el.style.top=st.y+'%';
     el.style.width=Math.max(st.w,.8)+'%'; el.style.height=Math.max(st.h,1)+'%';
     el.addEventListener('click',e=>{e.stopPropagation(); openStand(st)});
@@ -449,7 +449,7 @@ function select(st,scroll=true){
 function openStand(st){
   select(st,false);
   currentStand=st;
-  document.getElementById('modal-title').textContent='Stand '+st.id;
+  document.getElementById('modal-title').textContent=(st.id==='VIP HUT'?st.id:'Stand '+st.id);
   document.getElementById('modal-actions').hidden=false;
   document.getElementById('modal-thanks').hidden=true;
   document.getElementById('modal-form').hidden=true;
