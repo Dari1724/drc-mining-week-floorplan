@@ -82,8 +82,11 @@ input:focus,select:focus{outline:2px solid #209ed2}
 .modal .close-x{float:right;border:0;background:transparent;font-size:22px;line-height:1;cursor:pointer;color:#55708a;padding:0 0 0 10px}
 @media (max-width:760px){
   main{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
-  aside{max-height:42vh;border-right:0;border-bottom:1px solid #dbe3ec}
-  .viewer{min-height:55vh}
+  aside{max-height:42vh;overflow-y:auto;border-right:0;border-bottom:1px solid #dbe3ec}
+  .viewer{min-height:55vh;display:flex;flex-direction:column}
+  .panel{flex:none;min-height:auto}
+  .controls{position:static;margin:8px auto 0;flex-shrink:0;padding:5px;gap:4px}
+  .controls button{padding:6px 8px;font-size:12px}
 }
 </style>
 </head>
@@ -208,7 +211,7 @@ const stands = [{"id":"A01","x":22.4437,"y":18.4531,"w":1.1218,"h":1.2451},{"id"
 
 // Points of interest, positioned as % of the floorplan (x across, y down).
 const pois = [
-  {name:'Main Plenary', x:23.6, y:14.0, alias:['plenary','main hall','stage','main plenary']},
+  {name:'Main Plenary', x:23.6, y:14.0, stop:true, e:[24.82,22.51], wp:[[24.82,22.51],[24.83,19.6]], alias:['plenary','main hall','stage','main plenary']},
   {name:'Main entrance', x:50, y:97.5, alias:['entrance','expo entrance']},
   {name:'VIP Lounge', x:50.9, y:33.2, alias:['vip','vip lounges']},
   {name:'Delegate refreshment deck', x:34.1, y:15.6, alias:['delegate refreshments','delegate cafe','refreshment']},
@@ -233,7 +236,7 @@ const pois = [
   {name:'Pinnacle exhibition area', alias:['pinnacle'], range:'F1-F24 & D1-D8'},
   {name:'Premium exhibition area', alias:['premium'], range:'P1-P4'},
   {name:'Pool exhibition area', alias:['pool'], range:'B12-B36'},
-  {name:'Tchombe meeting room', x:35.2, y:20.2, alias:['tchombe','meeting room']},
+  {name:'Tchombe meeting room', x:35.2, y:20.2, stop:true, e:[32.7,22.7], wp:[[32.7,22.7],[31.2,20.7]], alias:['tchombe','meeting room']},
   {name:'Speaker lounge', x:20.3, y:19.3, alias:['speaker room','speakers']},
   {name:'Media room', x:20.9, y:37.2, alias:['media','media room']},
   {name:'Fire assembly point (1)', x:7.4, y:33.4, alias:['fire','assembly point','fire assembly']},
@@ -496,7 +499,7 @@ function findPlace(text){
   const t=text.trim().toLowerCase().replace(/^(i am at|i'm at|at|stand|next to|near)\s+/,'').trim();
   if(!t) return null;
   const poi=pois.find(p=>p.name.toLowerCase()===t || (p.alias||[]).includes(t));
-  if(poi) return {label:poi.name, x:poi.x, y:poi.y};
+  if(poi){ const e=poi.e||[poi.x,poi.y]; return {label:poi.name, x:e[0], y:e[1], via: poi.e? [poi.x,poi.y] : null, wp: poi.wp||null, stop: !!poi.stop}; }
   const st=stands.find(s=>s.id.toLowerCase()===t);
   if(st){ const e=st.e||[st.x,st.y]; return {label:(st.id==='VIP HUT'?st.id:'Stand '+st.id), x:e[0], y:e[1], via: st.e? [st.x,st.y] : null, aisle: !!st.aisle, wp: st.wp||null}; }
   return null;
@@ -594,7 +597,7 @@ function drawRoute(a,b){
   let lead=null, tail=null;
   if(a.via && a.aisle){ const ea=nearestOn(aisle,a.x,a.y); lead=[a.via, ea?cellPt(ea):[a.x,a.y]]; }
   else if(a.via){ const sv=nearestWalk(a.via[0],a.via[1]); const pre=sv&&aStar(sv,s); if(pre) cells=[...pre,...cells.slice(1)]; }
-  if(useWp){ tail=[...b.wp, b.via]; }
+  if(useWp){ tail = b.stop ? [...b.wp] : [...b.wp, b.via]; }
   else if(b.via && b.aisle){ const eb=nearestOn(aisle,b.x,b.y); tail=[eb?cellPt(eb):[b.x,b.y], b.via]; }
   else if(b.via){ const gv=nearestWalk(b.via[0],b.via[1]); const post=gv&&aStar(g,gv); if(post) cells=[...cells,...post.slice(1)]; }
   const pts=[...(lead||[a.via?a.via:[a.x,a.y]]), ...cells.map(cellPt), ...(tail||[b.via?b.via:[b.x,b.y]])];
